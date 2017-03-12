@@ -4,7 +4,10 @@ using UnityEngine;
 
 public class JobBasedAi : AiStrategy
 {
+    private void Start()
+    {
+        strategyName = "JobBased";
+    }
 
 
-    
 }

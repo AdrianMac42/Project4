@@ -4,10 +4,5 @@ using UnityEngine;
 
 public class AiStrategy : MonoBehaviour {
 
-    string strategyName;
-    // TODO : do this
-    void applyStrategy(CharacterStats[] characters)
-    {
-
-    }
+    public string strategyName;
 }

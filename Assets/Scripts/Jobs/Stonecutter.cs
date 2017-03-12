@@ -4,26 +4,31 @@ using UnityEngine;
 
 public class Stonecutter : Job
 {
-
     GameObject[] objs;
     CharacterStats character;
+
     void Start()
     {
-        Title = "Stonecutter";
-        NumberOfWorkers = 0;
-        Priority = 0;
-        TotalJobProduction = 0;
+        title = "Stonecutter";
+        numberOfWorkers1 = 0;
+        numberOfWorkers2 = 0;
+        priority = 0;
+        totalJobProduction = 0;
     }
 
     void Update()
     {
-        NumberOfWorkers = 0;
+        numberOfWorkers1 = 0;
+        numberOfWorkers2 = 0;
         objs = GameObject.FindGameObjectsWithTag("Character");
         foreach (GameObject element in objs)
         {
-            if (element.GetComponent<CharacterStats>().currentJob.Title == Title)
+            if (element.GetComponent<CharacterStats>().currentJob.title == title)
             {
-                NumberOfWorkers++;
+                if (element.GetComponent<CharacterStats>().teamNo == 1)
+                    numberOfWorkers1++;
+                else
+                    numberOfWorkers2++;
                 work(element.GetComponent<CharacterStats>());
             }
         }
@@ -57,29 +62,10 @@ public class Stonecutter : Job
                 {
                     ch.currentWorkTarget = tar;
                 }
-                /*else if ((Vector3.Distance(ch.currentWorkTarget.transform.position, ch.transform.position)) > ch.viewRange && ch.currentCarryLoad > 0)
-                {
-
-                    Vector3 targetLoc = (ch.targetStockpile.transform.position - ch.transform.position);
-                    // if not withing range...move to it
-                    if (Vector3.Distance(ch.transform.position, ch.targetStockpile.transform.position) >= 0.5f)
-                    {
-                        ch.transform.position = Vector3.MoveTowards(ch.transform.position, ch.targetStockpile.transform.position, (ch.speed * Time.smoothDeltaTime));
-                    }
-                    else // if in range...deposit
-                    {
-                        ch.targetStockpile.GetComponent<Stockpile>().stone += ch.currentCarryLoad;
-                        ch.currentCarryLoad -= ch.currentCarryLoad;
-                    }
-
-                }
-                */
             }
 
-            // if theres a target within range
-            if (ch.currentWorkTarget
-                //&& (Vector3.Distance(ch.currentWorkTarget.transform.position, ch.transform.position)) <= ch.viewRange
-                )
+            // if theres a target 
+            if (ch.currentWorkTarget)
             {
                 Vector3 targetLoc = (ch.currentWorkTarget.transform.position - ch.transform.position);
                 // if not within range...move to it

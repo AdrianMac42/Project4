@@ -8,21 +8,27 @@ public class Fighter : Job {
     CharacterStats character;
     void Start ()
     {
-        Title = "Fighter";
-        NumberOfWorkers = 0;
-        Priority = 0;
-        TotalJobProduction = 0;
+        title = "Fighter";
+        numberOfWorkers1 = 0;
+        numberOfWorkers2 = 0;
+        priority = 0;
+        totalJobProduction = 0;
     }
 
     void Update()
     {
+        numberOfWorkers1 = 0;
+        numberOfWorkers2 = 0;
         objs = GameObject.FindGameObjectsWithTag("Character");
         foreach (GameObject element in objs)
         {
-            character = element.GetComponent<CharacterStats>();
-            if (character.currentJob.Title == Title)
+            if (element.GetComponent<CharacterStats>().currentJob.title == title)
             {
-                work(character);
+                if (element.GetComponent<CharacterStats>().teamNo == 1)
+                    numberOfWorkers1++;
+                else
+                    numberOfWorkers2++;
+                work(element.GetComponent<CharacterStats>());
             }
         }
     }

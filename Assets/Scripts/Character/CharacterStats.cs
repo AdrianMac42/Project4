@@ -118,14 +118,67 @@ public class CharacterStats : MonoBehaviour
         setStats();
     }
     JobBasedAi job;
-    Woodcutter j;
-
+    Woodcutter w;
+    Stonecutter s;
+    AnimalTamer a;
+    Crafter c;
+    Job j;
+    
     public void setStats()
     {
+        w= GameObject.Find("JobManager").GetComponent<Woodcutter>();
+        s= GameObject.Find("JobManager").GetComponent<Stonecutter>();
+        a= GameObject.Find("JobManager").GetComponent<AnimalTamer>();
+        c= GameObject.Find("JobManager").GetComponent<Crafter>();
+        if (teamNo == 1)
+        {
+            if (GameObject.Find("JobManager").GetComponent<Woodcutter>().numberOfWorkers1 < 2)
+            {
+                j = w;
+            }
+            else if (GameObject.Find("JobManager").GetComponent<Stonecutter>().numberOfWorkers1 < 2)
+            {
+                j = s;
+            }
+            else if (GameObject.Find("JobManager").GetComponent<AnimalTamer>().numberOfWorkers1 < 2)
+            {
+                j = a;
+            }
+            else if (GameObject.Find("JobManager").GetComponent<Crafter>().numberOfWorkers1 < 2)
+            {
+                j = c;
+            }
+            else
+            {
+                j = w;
+            }
+        }
+        else
+        {
+            if (GameObject.Find("JobManager").GetComponent<Woodcutter>().numberOfWorkers2 < 2)
+            {
+                j = w;
+            }
+            else if (GameObject.Find("JobManager").GetComponent<Stonecutter>().numberOfWorkers2 < 2)
+            {
+                j = s;
+            }
+            else if (GameObject.Find("JobManager").GetComponent<AnimalTamer>().numberOfWorkers2 < 2)
+            {
+                j = a;
+            }
+            else if (GameObject.Find("JobManager").GetComponent<Crafter>().numberOfWorkers2 < 2)
+            {
+                j = c;
+            }
+            else
+            {
+                j = w;
+            }
+        }
         viewRange = 50;
         double x = (dexterity / 2);
         speed = 10;
-        j = GameObject.Find("JobManager").GetComponent<Woodcutter>();
         //TEMP AI STRAT
         aiStrategy = job;
         currentJob = j;
@@ -161,6 +214,5 @@ public class CharacterStats : MonoBehaviour
         animalHandling = (int)Math.Floor(x);
         //INSPIRATION
         inspiration = charisma;
-
     }
 }

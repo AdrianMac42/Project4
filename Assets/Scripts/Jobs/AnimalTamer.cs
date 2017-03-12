@@ -12,23 +12,27 @@ public class AnimalTamer : Job {
 
     void Start ()
     {
-        Title = "AnimalTamer";
-        NumberOfWorkers = 0;
-        Priority = 0;
-        TotalJobProduction = 0;
+        title = "AnimalTamer";
+        numberOfWorkers1 = 0;
+        numberOfWorkers2 = 0;
+        priority = 0;
+        totalJobProduction = 0;
     }
 
     void Update()
     {
-        NumberOfWorkers = 0;
+        numberOfWorkers1 = 0;
+        numberOfWorkers2 = 0;
         objs = GameObject.FindGameObjectsWithTag("Character");
         foreach (GameObject element in objs)
         {
-            character = element.GetComponent<CharacterStats>();
-            if (character.currentJob.Title == Title)
+            if (element.GetComponent<CharacterStats>().currentJob.title == title)
             {
-                NumberOfWorkers += 1;
-                work(character);
+                if (element.GetComponent<CharacterStats>().teamNo == 1)
+                    numberOfWorkers1++;
+                else
+                    numberOfWorkers2++;
+                work(element.GetComponent<CharacterStats>());
             }
         }
     }

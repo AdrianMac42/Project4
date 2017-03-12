@@ -14,14 +14,18 @@ public class Team : MonoBehaviour {
     GameObject character;
     GameObject spawnN;
     public Material mat;
-
+    Woodcutter w;
+    Stonecutter s;
+    AnimalTamer a;
+    Crafter c;
+    Job j;
 
     public void makeTeam(GameObject c, string name, int x)
     {
         character = c;
         t = x;
         teamName = name;
-        teamCount = 12;
+        teamCount = 8;
         spawn();
 
     }
@@ -30,7 +34,7 @@ public class Team : MonoBehaviour {
         character = c;
         t = x;
         teamName = name;
-        teamCount = 12;
+        teamCount = 8;
         teamAi = ai;
         spawn();
     }
@@ -61,7 +65,23 @@ public class Team : MonoBehaviour {
             ch.newCharacterStats(this);
             ch.teamNo = t;
             chara.GetComponent<MeshRenderer>().material = mat;
+            if (teamAi.strategyName == "JobBased")
+            {
+                assignJobBased(GameObject.Find("JobManager"), ch);
+            }
         }
+    }
+
+    
+        
+    void assignJobBased(GameObject jobCon, CharacterStats cha)
+    {
+        w = jobCon.GetComponent<Woodcutter>();
+        s = jobCon.GetComponent<Stonecutter>();
+        a = jobCon.GetComponent<AnimalTamer>();
+        c = jobCon.GetComponent<Crafter>();
+
+        cha.currentJob = j;
     }
 
     void Update()
