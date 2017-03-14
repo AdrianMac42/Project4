@@ -18,6 +18,7 @@ public class Team : MonoBehaviour {
     Stonecutter s;
     AnimalTamer a;
     Crafter c;
+    Idle i;
     Job j;
 
     public void makeTeam(GameObject c, string name, int x)
@@ -65,21 +66,76 @@ public class Team : MonoBehaviour {
             ch.newCharacterStats(this);
             ch.teamNo = t;
             chara.GetComponent<MeshRenderer>().material = mat;
-            if (teamAi.strategyName == "JobBased")
+            if (!teamAi)
+            {
+                assignJobBased(GameObject.Find("JobManager"), ch);
+            }
+            else if(teamAi.strategyName == "JobBased")
             {
                 assignJobBased(GameObject.Find("JobManager"), ch);
             }
         }
     }
+    int woodworkers = 0;
+    int stonecutters = 0;
+    int animalTamers = 0;
+    int crafters = 0;
+    int idlers = 0;
 
-    
-        
+
     void assignJobBased(GameObject jobCon, CharacterStats cha)
     {
         w = jobCon.GetComponent<Woodcutter>();
         s = jobCon.GetComponent<Stonecutter>();
         a = jobCon.GetComponent<AnimalTamer>();
         c = jobCon.GetComponent<Crafter>();
+        i = jobCon.GetComponent<Idle>();
+
+        if (woodworkers == 0)
+        {
+            j = w;
+            woodworkers++;
+        }
+        else if (stonecutters == 0)
+        {
+            j = s;
+            stonecutters++;
+        }
+        else if ( animalTamers == 0)
+        {
+            j = a;
+            animalTamers++;
+        }
+        else if ( crafters == 0)
+        {
+            j = c;
+            crafters++;
+        }
+        else if (woodworkers == 1)
+        {
+            j = w;
+            woodworkers++;
+        }
+        else if (stonecutters == 1)
+        {
+            j = s;
+            stonecutters++;
+        }
+        else if (animalTamers == 1)
+        {
+            j = a;
+            animalTamers++;
+        }
+        else if (crafters == 1)
+        {
+            j = c;
+            crafters++;
+        }
+        else
+        {
+            j = i;
+            idlers++;
+        }
 
         cha.currentJob = j;
     }

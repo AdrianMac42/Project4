@@ -84,16 +84,8 @@ public class AnimalTamer : Job {
                         ch.currentWorkTarget.GetComponent<Stones>().stone -= 1;
                         ch.currentCarryLoad += 1;
                     }
-
-
-
                 }
             }
         }
     }
-
-
-
-
-
 }

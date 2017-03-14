@@ -7,14 +7,14 @@ public class TeamsController : MonoBehaviour {
 
     public Team team1;
     public Team team2;
-    string t1;
-    string t2;
+    public string t1;
+    public string t2;
     public GameObject teamPlaceholder;
     public GameObject character;
     public Material red;
     public Material blue;
+    JobBasedAi jobBased;
     
-
     public void spawnTeams()
     {
         t1 = GameObject.Find("Team1Name").GetComponent<InputField>().text;
@@ -26,7 +26,7 @@ public class TeamsController : MonoBehaviour {
         team1.mat = red;
         team2.mat = blue;
         team1.makeTeam(character,t1,1);
-        team2.makeTeam(character,t2,2);
+        team2.makeTeam(character,t2,jobBased,2);
         Debug.Log("Team 1 = " + team1.teamName);
         Debug.Log("Team 2 = " + team2.teamName);
 

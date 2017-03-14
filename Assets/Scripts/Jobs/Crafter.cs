@@ -7,6 +7,7 @@ public class Crafter : Job {
     GameObject[] objs;
     CharacterStats character;
     int noInTeam;
+
     GameObject[] armories;
     GameObject armory;
     bool armoryFull = false;
