@@ -20,16 +20,21 @@ public class Pause : MonoBehaviour
 
     public void speed()
     {
-        if (Time.timeScale < 3)
+        if (Time.timeScale < 10)
         {
-            Time.timeScale += 1;
+            Time.timeScale += 2;
             Debug.Log(Time.timeScale);
         }
     }
 
     public void slow()
     {
-        if (Time.timeScale > 1)
+        if (Time.timeScale > 2)
+        {
+            Time.timeScale -= 2;
+            Debug.Log(Time.timeScale);
+        }
+        else if (Time.timeScale == 2)
         {
             Time.timeScale -= 1;
             Debug.Log(Time.timeScale);

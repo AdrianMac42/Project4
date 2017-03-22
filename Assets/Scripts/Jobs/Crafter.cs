@@ -5,19 +5,18 @@ using UnityEngine;
 public class Crafter : Job {
 
     GameObject[] objs;
-    CharacterStats character;
     int noInTeam;
 
     GameObject[] armories;
     GameObject armory;
     bool armoryFull = false;
-    Sword sword = new Sword();
-    Dagger dagger = new Dagger();
-    Bow bow = new Bow();
-    Shield shield = new Shield();
-    LArmor larm = new LArmor();
-    MArmor marm = new MArmor();
-    HArmor harm = new HArmor();
+    Sword sword;
+    Dagger dagger;
+    Bow bow; 
+    Shield shield;
+    LArmor larm;
+    MArmor marm;
+    HArmor harm;
 
     void Start ()
     {
@@ -26,6 +25,13 @@ public class Crafter : Job {
         numberOfWorkers2 = 0;
         priority = 0;
         totalJobProduction = 0;
+        sword = new Sword();
+        dagger = new Dagger();
+        bow = new Bow();
+        shield = new Shield();
+        larm = new LArmor();
+        marm = new MArmor();
+        harm = new HArmor();
     }
 
     void Update()
@@ -41,451 +47,644 @@ public class Crafter : Job {
                     numberOfWorkers1++;
                 else
                     numberOfWorkers2++;
-                work(element.GetComponent<CharacterStats>());
+
+                if (GameObject.Find("GameController").GetComponent<PhaseManager>().phaseNo <= 1)
+                {
+                    work(element.GetComponent<CharacterStats>());
+                }
+                else
+                {
+                    finishWork(element.GetComponent<CharacterStats>());
+                }
             }
         }
     }
 
-    void craftSword(CharacterStats character, Stockpile stock)
+
+    void finishWork(CharacterStats ch)
     {
-        if (checkReq(character.targetStockpile.GetComponent<Stockpile>(), sword) && character.collected != true)
+        if (ch.currentCarryLoad > 0)
         {
-            Item iCraft = sword;
-            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 0.5f)
+            if (ch.teamNo == 1)
+            {
+                ch.targetStockpile = GameObject.Find("Team1Spawn");
+            }
+            else if (ch.teamNo == 2)
+            {
+                ch.targetStockpile = GameObject.Find("Team2Spawn");
+            }
+            else
+            {
+                Debug.LogError("STOCKPILE NOT ASSIGNED");
+            }
+            // if not withing range...move to it
+            if (Vector3.Distance(ch.transform.position, ch.targetStockpile.transform.position) >= 0.5f)
+            {
+                ch.transform.position = Vector3.MoveTowards(ch.transform.position, ch.targetStockpile.transform.position, (ch.speed * Time.smoothDeltaTime));
+            }
+            else // if in range...deposit
+            {
+                ch.targetStockpile.GetComponent<Stockpile>().stone += ch.currentCarryLoad;
+                ch.currentCarryLoad -= ch.currentCarryLoad;
+            }
+        }
+        else
+        {
+            ch.armUp();
+        }
+    }
+
+    void craftSword(CharacterStats character)
+    {
+        if (sword.checkReq(character.targetStockpile) && character.collected != true && character.crafted != true)//Change
+        {
+            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.targetStockpile.transform.position, (character.speed * Time.smoothDeltaTime));
             }
-            else
+            else if(character.teamNo == 1)
             {
-                stock.leather -= iCraft.leatherReq;
-                stock.stone -= iCraft.stoneReq;
-                stock.wood -= iCraft.woodReq;
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractLeather(sword.leatherReq);// Change
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractStone(sword.stoneReq);
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractWood(sword.woodReq);
+                character.collected = true;
+            }
+            else if (character.teamNo == 2)
+            {
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractLeather(sword.leatherReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractStone(sword.stoneReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractWood(sword.woodReq);
                 character.collected = true;
             }
         }
-        else if (character.collected == true && character.currentCarryLoad < character.maxCarryLoad)
+        else if (character.collected == true && character.crafted == false)
         {
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Workshop");
+            foreach (GameObject tar in character.workTargets)
             {
-                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
-            }
-            else
-            {
-                character.currentCarryLoad = character.maxCarryLoad;
-                Sword weapon = new Sword();
-                weapon.Quality = character.crafting;
-                character.equipRight(weapon);
-            }
-        }
-        else if (character.currentCarryLoad == character.maxCarryLoad)
-        {
-            if (character.currentWorkTarget.tag != "Armory")
-            {
-                character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
-                foreach (GameObject tar in character.workTargets)
+                if (character.currentWorkTarget == null)
                 {
-                    if (character.currentWorkTarget == null)
-                    {
-                        character.currentWorkTarget = tar;
-                    }
-                    else if ((Vector3.Distance(tar.transform.position, stock.transform.position))
-                        < (Vector3.Distance(character.currentWorkTarget.transform.position, stock.transform.position)))
-                    {
-                        character.currentWorkTarget = tar;
-                    }
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.transform.position)))
+                {
+                    character.currentWorkTarget = tar;
                 }
             }
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            if (character.currentWorkTarget.tag == "Workshop" && Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
             }
+            else if (character.currentWorkTarget.tag == "Workshop")
+            {
+                sword.quality = character.crafting;// Change
+                character.equipRight(sword);// Change
+                character.crafted = true;
+                character.collected = false;
+            }
             else
             {
-
-                character.currentCarryLoad = 0;
-                character.currentWorkTarget.GetComponent<Armory>().swords.Add(character.rHand);
+                Debug.LogError("Cant find Workshop");
+            }
+        }
+        if (character.crafted == true)
+        {
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
+            foreach (GameObject tar in character.workTargets)
+            {
+                if (character.currentWorkTarget == null)
+                {
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position)))
+                {
+                    character.currentWorkTarget = tar;
+                }
+            }
+            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
+            {
+                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
+            }
+            else if(character.currentWorkTarget.tag == "Armory")
+            {
+                character.currentWorkTarget.GetComponent<Armory>().swords.Add(character.rHand);// Change
                 character.rHand = null;
                 character.collected = false;
+                character.crafted = false;
             }
         }
     }
 
-    void craftDagger(CharacterStats character, Stockpile stock)
+    void craftDagger(CharacterStats character)
     {
-        if (checkReq(character.targetStockpile.GetComponent<Stockpile>(), dagger) && character.collected != true)
+        if (dagger.checkReq(character.targetStockpile) && character.collected != true && character.crafted != true)//Change
         {
-            Item iCraft = dagger;
-            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 0.5f)
+            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.targetStockpile.transform.position, (character.speed * Time.smoothDeltaTime));
             }
-            else
+            else if (character.teamNo == 1)
             {
-                stock.leather -= iCraft.leatherReq;
-                stock.stone -= iCraft.stoneReq;
-                stock.wood -= iCraft.woodReq;
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractLeather(dagger.leatherReq);// Change
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractStone(dagger.stoneReq);
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractWood(dagger.woodReq);
+                character.collected = true;
+            }
+            else if (character.teamNo == 2)
+            {
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractLeather(dagger.leatherReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractStone(dagger.stoneReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractWood(dagger.woodReq);
                 character.collected = true;
             }
         }
-        else if (character.collected == true && character.currentCarryLoad < character.maxCarryLoad)
+        else if (character.collected == true && character.crafted == false)
         {
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Workshop");
+            foreach (GameObject tar in character.workTargets)
             {
-                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
-            }
-            else
-            {
-                character.currentCarryLoad = character.maxCarryLoad;
-                Dagger weapon = new Dagger();
-                weapon.Quality = character.crafting;
-                character.equipRight(weapon);
-            }
-        }
-        else if (character.currentCarryLoad == character.maxCarryLoad)
-        {
-            if (character.currentWorkTarget.tag != "Armory")
-            {
-                character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
-                foreach (GameObject tar in character.workTargets)
+                if (character.currentWorkTarget == null)
                 {
-                    if (character.currentWorkTarget == null)
-                    {
-                        character.currentWorkTarget = tar;
-                    }
-                    else if ((Vector3.Distance(tar.transform.position, stock.transform.position))
-                        < (Vector3.Distance(character.currentWorkTarget.transform.position, stock.transform.position)))
-                    {
-                        character.currentWorkTarget = tar;
-                    }
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.transform.position)))
+                {
+                    character.currentWorkTarget = tar;
                 }
             }
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            if (character.currentWorkTarget.tag == "Workshop" && Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
             }
+            else if (character.currentWorkTarget.tag == "Workshop")
+            {
+                dagger.quality = character.crafting;// Change
+                character.equipRight(dagger);// Change
+                character.crafted = true;
+                character.collected = false;
+            }
             else
             {
-
-                character.currentCarryLoad = 0;
-                character.currentWorkTarget.GetComponent<Armory>().daggers.Add(character.rHand);
+                Debug.LogError("Cant find Workshop");
+            }
+        }
+        if (character.crafted == true)
+        {
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
+            foreach (GameObject tar in character.workTargets)
+            {
+                if (character.currentWorkTarget == null)
+                {
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position)))
+                {
+                    character.currentWorkTarget = tar;
+                }
+            }
+            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
+            {
+                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
+            }
+            else if (character.currentWorkTarget.tag == "Armory")
+            {
+                character.currentWorkTarget.GetComponent<Armory>().daggers.Add(character.rHand);// Change
                 character.rHand = null;
                 character.collected = false;
+                character.crafted = false;
             }
         }
     }
 
-    void craftBow(CharacterStats character, Stockpile stock)
+    void craftBow(CharacterStats character)
     {
-        if (checkReq(character.targetStockpile.GetComponent<Stockpile>(), bow) && character.collected != true)
+        if (bow.checkReq(character.targetStockpile) && character.collected != true && character.crafted != true)//Change
         {
-            Item iCraft = bow;
-            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 0.5f)
+            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.targetStockpile.transform.position, (character.speed * Time.smoothDeltaTime));
             }
-            else
+            else if (character.teamNo == 1)
             {
-                stock.leather -= iCraft.leatherReq;
-                stock.stone -= iCraft.stoneReq;
-                stock.wood -= iCraft.woodReq;
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractLeather(bow.leatherReq);// Change
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractStone(bow.stoneReq);
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractWood(bow.woodReq);
+                character.collected = true;
+            }
+            else if (character.teamNo == 2)
+            {
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractLeather(bow.leatherReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractStone(bow.stoneReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractWood(bow.woodReq);
                 character.collected = true;
             }
         }
-        else if (character.collected == true && character.currentCarryLoad < character.maxCarryLoad)
+        else if (character.collected == true && character.crafted == false)
         {
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Workshop");
+            foreach (GameObject tar in character.workTargets)
             {
-                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
-            }
-            else
-            {
-                character.currentCarryLoad = character.maxCarryLoad;
-                Bow weapon = new Bow();
-                weapon.Quality = character.crafting;
-                character.equipRight(weapon);
-            }
-        }
-        else if (character.currentCarryLoad == character.maxCarryLoad)
-        {
-            if (character.currentWorkTarget.tag != "Armory")
-            {
-                character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
-                foreach (GameObject tar in character.workTargets)
+                if (character.currentWorkTarget == null)
                 {
-                    if (character.currentWorkTarget == null)
-                    {
-                        character.currentWorkTarget = tar;
-                    }
-                    else if ((Vector3.Distance(tar.transform.position, stock.transform.position))
-                        < (Vector3.Distance(character.currentWorkTarget.transform.position, stock.transform.position)))
-                    {
-                        character.currentWorkTarget = tar;
-                    }
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.transform.position)))
+                {
+                    character.currentWorkTarget = tar;
                 }
             }
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            if (character.currentWorkTarget.tag == "Workshop" && Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
             }
+            else if (character.currentWorkTarget.tag == "Workshop")
+            {
+                bow.quality = character.crafting;// Change
+                character.equipRight(bow);// Change
+                character.crafted = true;
+                character.collected = false;
+            }
             else
             {
-
-                character.currentCarryLoad = 0;
-                character.currentWorkTarget.GetComponent<Armory>().bows.Add(character.rHand);
+                Debug.LogError("Cant find Workshop");
+            }
+        }
+        if (character.crafted == true)
+        {
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
+            foreach (GameObject tar in character.workTargets)
+            {
+                if (character.currentWorkTarget == null)
+                {
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position)))
+                {
+                    character.currentWorkTarget = tar;
+                }
+            }
+            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
+            {
+                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
+            }
+            else if (character.currentWorkTarget.tag == "Armory")
+            {
+                character.currentWorkTarget.GetComponent<Armory>().bows.Add(character.rHand);// Change
                 character.rHand = null;
                 character.collected = false;
+                character.crafted = false;
             }
         }
     }
 
-    void craftHArmor(CharacterStats character, Stockpile stock)
+    void craftHArmor(CharacterStats character)
     {
-        if (checkReq(character.targetStockpile.GetComponent<Stockpile>(), harm) && character.collected != true)
+        if (harm.checkReq(character.targetStockpile) && character.collected != true && character.crafted != true)//Change
         {
-            Item iCraft = harm;
-            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 0.5f)
+            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.targetStockpile.transform.position, (character.speed * Time.smoothDeltaTime));
             }
-            else
+            else if (character.teamNo == 1)
             {
-                stock.leather -= iCraft.leatherReq;
-                stock.stone -= iCraft.stoneReq;
-                stock.wood -= iCraft.woodReq;
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractLeather(harm.leatherReq);// Change
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractStone(harm.stoneReq);
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractWood(harm.woodReq);
+                character.collected = true;
+            }
+            else if (character.teamNo == 2)
+            {
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractLeather(harm.leatherReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractStone(harm.stoneReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractWood(harm.woodReq);
                 character.collected = true;
             }
         }
-        else if (character.collected == true && character.currentCarryLoad < character.maxCarryLoad)
+        else if (character.collected == true && character.crafted == false)
         {
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Workshop");
+            foreach (GameObject tar in character.workTargets)
             {
-                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
-            }
-            else
-            {
-                character.currentCarryLoad = character.maxCarryLoad;
-                HArmor weapon = new HArmor();
-                character.equipRight(weapon);
-            }
-        }
-        else if (character.currentCarryLoad == character.maxCarryLoad)
-        {
-            if (character.currentWorkTarget.tag != "Armory")
-            {
-                character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
-                foreach (GameObject tar in character.workTargets)
+                if (character.currentWorkTarget == null)
                 {
-                    if (character.currentWorkTarget == null)
-                    {
-                        character.currentWorkTarget = tar;
-                    }
-                    else if ((Vector3.Distance(tar.transform.position, stock.transform.position))
-                        < (Vector3.Distance(character.currentWorkTarget.transform.position, stock.transform.position)))
-                    {
-                        character.currentWorkTarget = tar;
-                    }
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.transform.position)))
+                {
+                    character.currentWorkTarget = tar;
                 }
             }
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            if (character.currentWorkTarget.tag == "Workshop" && Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
             }
+            else if (character.currentWorkTarget.tag == "Workshop")
+            {
+                harm.quality = character.crafting;// Change
+                character.equipRight(harm);// Change
+                character.crafted = true;
+                character.collected = false;
+            }
             else
             {
-
-                character.currentCarryLoad = 0;
-                character.currentWorkTarget.GetComponent<Armory>().harmor.Add(character.rHand);
+                Debug.LogError("Cant find Workshop");
+            }
+        }
+        if (character.crafted == true)
+        {
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
+            foreach (GameObject tar in character.workTargets)
+            {
+                if (character.currentWorkTarget == null)
+                {
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position)))
+                {
+                    character.currentWorkTarget = tar;
+                }
+            }
+            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
+            {
+                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
+            }
+            else if (character.currentWorkTarget.tag == "Armory")
+            {
+                character.currentWorkTarget.GetComponent<Armory>().harmor.Add(character.rHand);// Change
                 character.rHand = null;
                 character.collected = false;
+                character.crafted = false;
             }
         }
     }
 
-    void craftMArmor(CharacterStats character, Stockpile stock)
+    void craftMArmor(CharacterStats character)
     {
-        if (checkReq(character.targetStockpile.GetComponent<Stockpile>(), marm) && character.collected != true)
+        if (marm.checkReq(character.targetStockpile) && character.collected != true && character.crafted != true)//Change
         {
-            Item iCraft = marm;
-            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 0.5f)
+            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.targetStockpile.transform.position, (character.speed * Time.smoothDeltaTime));
             }
-            else
+            else if (character.teamNo == 1)
             {
-                stock.leather -= iCraft.leatherReq;
-                stock.stone -= iCraft.stoneReq;
-                stock.wood -= iCraft.woodReq;
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractLeather(marm.leatherReq);// Change
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractStone(marm.stoneReq);
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractWood(marm.woodReq);
+                character.collected = true;
+            }
+            else if (character.teamNo == 2)
+            {
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractLeather(marm.leatherReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractStone(marm.stoneReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractWood(marm.woodReq);
                 character.collected = true;
             }
         }
-        else if (character.collected == true && character.currentCarryLoad < character.maxCarryLoad)
+        else if (character.collected == true && character.crafted == false)
         {
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Workshop");
+            foreach (GameObject tar in character.workTargets)
             {
-                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
-            }
-            else
-            {
-                character.currentCarryLoad = character.maxCarryLoad;
-                MArmor weapon = new MArmor();
-                character.equipRight(weapon);
-            }
-        }
-        else if (character.currentCarryLoad == character.maxCarryLoad)
-        {
-            if (character.currentWorkTarget.tag != "Armory")
-            {
-                character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
-                foreach (GameObject tar in character.workTargets)
+                if (character.currentWorkTarget == null)
                 {
-                    if (character.currentWorkTarget == null)
-                    {
-                        character.currentWorkTarget = tar;
-                    }
-                    else if ((Vector3.Distance(tar.transform.position, stock.transform.position))
-                        < (Vector3.Distance(character.currentWorkTarget.transform.position, stock.transform.position)))
-                    {
-                        character.currentWorkTarget = tar;
-                    }
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.transform.position)))
+                {
+                    character.currentWorkTarget = tar;
                 }
             }
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            if (character.currentWorkTarget.tag == "Workshop" && Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
             }
+            else if (character.currentWorkTarget.tag == "Workshop")
+            {
+                marm.quality = character.crafting;// Change
+                character.equipRight(marm);// Change
+                character.crafted = true;
+                character.collected = false;
+            }
             else
             {
-
-                character.currentCarryLoad = 0;
-                character.currentWorkTarget.GetComponent<Armory>().marmor.Add(character.rHand);
+                Debug.LogError("Cant find Workshop");
+            }
+        }
+        if (character.crafted == true)
+        {
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
+            foreach (GameObject tar in character.workTargets)
+            {
+                if (character.currentWorkTarget == null)
+                {
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position)))
+                {
+                    character.currentWorkTarget = tar;
+                }
+            }
+            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
+            {
+                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
+            }
+            else if (character.currentWorkTarget.tag == "Armory")
+            {
+                character.currentWorkTarget.GetComponent<Armory>().marmor.Add(character.rHand);// Change
                 character.rHand = null;
                 character.collected = false;
+                character.crafted = false;
             }
         }
     }
 
-    void craftLArmor(CharacterStats character, Stockpile stock)
+    void craftLArmor(CharacterStats character)
     {
-        if (checkReq(character.targetStockpile.GetComponent<Stockpile>(), larm) && character.collected != true)
+        if (larm.checkReq(character.targetStockpile) && character.collected != true && character.crafted != true)//Change
         {
-            Item iCraft = larm;
-            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 0.5f)
+            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.targetStockpile.transform.position, (character.speed * Time.smoothDeltaTime));
             }
-            else
+            else if (character.teamNo == 1)
             {
-                stock.leather -= iCraft.leatherReq;
-                stock.stone -= iCraft.stoneReq;
-                stock.wood -= iCraft.woodReq;
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractLeather(larm.leatherReq);// Change
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractStone(larm.stoneReq);
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractWood(larm.woodReq);
+                character.collected = true;
+            }
+            else if (character.teamNo == 2)
+            {
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractLeather(larm.leatherReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractStone(larm.stoneReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractWood(larm.woodReq);
                 character.collected = true;
             }
         }
-        else if (character.collected == true && character.currentCarryLoad < character.maxCarryLoad)
+        else if (character.collected == true && character.crafted == false)
         {
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Workshop");
+            foreach (GameObject tar in character.workTargets)
             {
-                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
-            }
-            else
-            {
-                character.currentCarryLoad = character.maxCarryLoad;
-                LArmor weapon = new LArmor();
-                character.equipRight(weapon);
-            }
-        }
-        else if (character.currentCarryLoad == character.maxCarryLoad)
-        {
-            if (character.currentWorkTarget.tag != "Armory")
-            {
-                character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
-                foreach (GameObject tar in character.workTargets)
+                if (character.currentWorkTarget == null)
                 {
-                    if (character.currentWorkTarget == null)
-                    {
-                        character.currentWorkTarget = tar;
-                    }
-                    else if ((Vector3.Distance(tar.transform.position, stock.transform.position))
-                        < (Vector3.Distance(character.currentWorkTarget.transform.position, stock.transform.position)))
-                    {
-                        character.currentWorkTarget = tar;
-                    }
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.transform.position)))
+                {
+                    character.currentWorkTarget = tar;
                 }
             }
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            if (character.currentWorkTarget.tag == "Workshop" && Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
             }
+            else if (character.currentWorkTarget.tag == "Workshop")
+            {
+                larm.quality = character.crafting;// Change
+                character.equipRight(larm);// Change
+                character.crafted = true;
+                character.collected = false;
+            }
             else
             {
-
-                character.currentCarryLoad = 0;
-                character.currentWorkTarget.GetComponent<Armory>().larmor.Add(character.rHand);
+                Debug.LogError("Cant find Workshop");
+            }
+        }
+        if (character.crafted == true)
+        {
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
+            foreach (GameObject tar in character.workTargets)
+            {
+                if (character.currentWorkTarget == null)
+                {
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position)))
+                {
+                    character.currentWorkTarget = tar;
+                }
+            }
+            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
+            {
+                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
+            }
+            else if (character.currentWorkTarget.tag == "Armory")
+            {
+                character.currentWorkTarget.GetComponent<Armory>().larmor.Add(character.rHand);// Change
                 character.rHand = null;
                 character.collected = false;
+                character.crafted = false;
             }
         }
     }
 
-    void craftShield(CharacterStats character, Stockpile stock)
+    void craftShield(CharacterStats character)
     {
-        if (checkReq(character.targetStockpile.GetComponent<Stockpile>(), shield) && character.collected != true)
+        if (shield.checkReq(character.targetStockpile) && character.collected != true && character.crafted != true)//Change
         {
-            Item iCraft = shield;
-            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 0.5f)
+            if (Vector3.Distance(character.transform.position, character.targetStockpile.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.targetStockpile.transform.position, (character.speed * Time.smoothDeltaTime));
             }
-            else
+            else if (character.teamNo == 1)
             {
-                stock.leather -= iCraft.leatherReq;
-                stock.stone -= iCraft.stoneReq;
-                stock.wood -= iCraft.woodReq;
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractLeather(shield.leatherReq);// Change
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractStone(shield.stoneReq);
+                GameObject.Find("Team1Spawn").GetComponent<Stockpile>().subtractWood(shield.woodReq);
+                character.collected = true;
+            }
+            else if (character.teamNo == 2)
+            {
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractLeather(shield.leatherReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractStone(shield.stoneReq);
+                GameObject.Find("Team2Spawn").GetComponent<Stockpile>().subtractWood(shield.woodReq);
                 character.collected = true;
             }
         }
-        else if (character.collected == true && character.currentCarryLoad < character.maxCarryLoad)
+        else if (character.collected == true && character.crafted == false)
         {
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Workshop");
+            foreach (GameObject tar in character.workTargets)
             {
-                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
-            }
-            else
-            {
-                character.currentCarryLoad = character.maxCarryLoad;
-                Shield weapon = new Shield();
-                character.equipRight(weapon);
-            }
-        }
-        else if (character.currentCarryLoad == character.maxCarryLoad)
-        {
-            if (character.currentWorkTarget.tag != "Armory")
-            {
-                character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
-                foreach (GameObject tar in character.workTargets)
+                if (character.currentWorkTarget == null)
                 {
-                    if (character.currentWorkTarget == null)
-                    {
-                        character.currentWorkTarget = tar;
-                    }
-                    else if ((Vector3.Distance(tar.transform.position, stock.transform.position))
-                        < (Vector3.Distance(character.currentWorkTarget.transform.position, stock.transform.position)))
-                    {
-                        character.currentWorkTarget = tar;
-                    }
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.transform.position)))
+                {
+                    character.currentWorkTarget = tar;
                 }
             }
-            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 0.5f)
+            if (character.currentWorkTarget.tag == "Workshop" && Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
             {
                 character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
             }
+            else if (character.currentWorkTarget.tag == "Workshop")
+            {
+                shield.quality = character.crafting;// Change
+                character.equipRight(shield);// Change
+                character.crafted = true;
+                character.collected = false;
+            }
             else
             {
-
-                character.currentCarryLoad = 0;
-                character.currentWorkTarget.GetComponent<Armory>().shields.Add(character.rHand);
+                Debug.LogError("Cant find Workshop");
+            }
+        }
+        if (character.crafted == true)
+        {
+            character.currentWorkTarget = null;
+            character.workTargets = GameObject.FindGameObjectsWithTag("Armory");
+            foreach (GameObject tar in character.workTargets)
+            {
+                if (character.currentWorkTarget == null)
+                {
+                    character.currentWorkTarget = tar;
+                }
+                else if ((Vector3.Distance(tar.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position))
+                    < (Vector3.Distance(character.currentWorkTarget.transform.position, character.targetStockpile.GetComponent<Stockpile>().transform.position)))
+                {
+                    character.currentWorkTarget = tar;
+                }
+            }
+            if (Vector3.Distance(character.transform.position, character.currentWorkTarget.transform.position) >= 1)
+            {
+                character.transform.position = Vector3.MoveTowards(character.transform.position, character.currentWorkTarget.transform.position, (character.speed * Time.smoothDeltaTime));
+            }
+            else if (character.currentWorkTarget.tag == "Armory")
+            {
+                character.currentWorkTarget.GetComponent<Armory>().shields.Add(character.rHand);// Change
                 character.rHand = null;
                 character.collected = false;
+                character.crafted = false;
             }
         }
     }
@@ -505,6 +704,7 @@ public class Crafter : Job {
         {
             Debug.LogError("STOCKPILE NOT ASSIGNED");
         }
+        ch.currentWorkTarget = null;
         ch.workTargets = GameObject.FindGameObjectsWithTag("Workshop");
         foreach (GameObject tar in ch.workTargets)
         {
@@ -518,9 +718,10 @@ public class Crafter : Job {
                 ch.currentWorkTarget = tar;
             }
         }
-        if (ch.currentCarryLoad < ch.maxCarryLoad && ch.workTargets.Length >= 1 && armoryFull == false)
+        if (ch.workTargets.Length >= 1)
         {
             //craft...
+            armory = null;
             armories = GameObject.FindGameObjectsWithTag("Armory");
             foreach (GameObject tar in armories)
             {
@@ -535,33 +736,33 @@ public class Crafter : Job {
                 }
             }
             // Craft in priority....
-            if (checkReq(ch.targetStockpile.GetComponent<Stockpile>(), sword) && armory.GetComponent<Armory>().swords.Count < ch.team.teamCount)
+            if (sword.checkReq(ch.targetStockpile) && armory.GetComponent<Armory>().swords.Count < ch.team.teamCount)
             {
-                craftSword(ch, ch.targetStockpile.GetComponent<Stockpile>());
+                craftSword(ch);
             }
-            else if (checkReq(ch.targetStockpile.GetComponent<Stockpile>(), harm) && armory.GetComponent<Armory>().harmor.Count < ch.team.teamCount)
+            else if (harm.checkReq(ch.targetStockpile) && armory.GetComponent<Armory>().harmor.Count < ch.team.teamCount)
             {
-                craftHArmor(ch, ch.targetStockpile.GetComponent<Stockpile>());
+                craftHArmor(ch);
             }
-            else if (checkReq(ch.targetStockpile.GetComponent<Stockpile>(), bow) && armory.GetComponent<Armory>().bows.Count < ch.team.teamCount)
+            else if (bow.checkReq(ch.targetStockpile) && armory.GetComponent<Armory>().bows.Count < ch.team.teamCount)
             {
-                craftBow(ch, ch.targetStockpile.GetComponent<Stockpile>());
+                craftBow(ch);
             }
-            else if (checkReq(ch.targetStockpile.GetComponent<Stockpile>(), marm) && armory.GetComponent<Armory>().marmor.Count < ch.team.teamCount)
+            else if (marm.checkReq(ch.targetStockpile) && armory.GetComponent<Armory>().marmor.Count < ch.team.teamCount)
             {
-                craftMArmor(ch, ch.targetStockpile.GetComponent<Stockpile>());
+                craftMArmor(ch);
             }
-            else if (checkReq(ch.targetStockpile.GetComponent<Stockpile>(), shield) && armory.GetComponent<Armory>().shields.Count < ch.team.teamCount)
+            else if (shield.checkReq(ch.targetStockpile) && armory.GetComponent<Armory>().shields.Count < ch.team.teamCount)
             {
-                craftShield(ch, ch.targetStockpile.GetComponent<Stockpile>());
+                craftShield(ch);
             }
-            else if (checkReq(ch.targetStockpile.GetComponent<Stockpile>(), larm) && armory.GetComponent<Armory>().larmor.Count < ch.team.teamCount)
+            else if (larm.checkReq(ch.targetStockpile) && armory.GetComponent<Armory>().larmor.Count < ch.team.teamCount)
             {
-                craftLArmor(ch, ch.targetStockpile.GetComponent<Stockpile>());
+                craftLArmor(ch);
             }
-            else if (checkReq(ch.targetStockpile.GetComponent<Stockpile>(), dagger) && armory.GetComponent<Armory>().daggers.Count < ch.team.teamCount)
+            else if (dagger.checkReq(ch.targetStockpile) && armory.GetComponent<Armory>().daggers.Count < ch.team.teamCount)
             {
-                craftDagger(ch, ch.targetStockpile.GetComponent<Stockpile>());
+                craftDagger(ch);
             }
             else
             {
@@ -576,35 +777,18 @@ public class Crafter : Job {
         }
     }
     
-    bool checkReq(Stockpile stock, Item i)
-    {
-        if (i.leatherReq >= stock.leather && i.stoneReq >= stock.stone && i.woodReq >= stock.wood )
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-    
     void strole(CharacterStats c)
     {
-        if (c.currentWorkTarget == null)
+        if (c.strolePos == null)
         {
-            c.currentWorkTarget = new GameObject();
-            c.currentWorkTarget.transform.position = c.transform.position;
+            c.strolePos = c.transform.position;
         }
         int ran = UnityEngine.Random.Range(1, 60);
         if (ran == 1)
         {
-            c.currentWorkTarget.transform.position += new Vector3(UnityEngine.Random.Range(-2, 3), UnityEngine.Random.Range(-2, 3), 0);
+            c.strolePos += new Vector3(UnityEngine.Random.Range(-2, 3), UnityEngine.Random.Range(-2, 3), 0);
         }
 
-        c.transform.position = Vector3.MoveTowards(c.transform.position, c.currentWorkTarget.transform.position, (c.speed * Time.smoothDeltaTime));
+        c.transform.position = Vector3.MoveTowards(c.transform.position, c.strolePos, (c.speed * Time.smoothDeltaTime));
     }
-
-
-
-
 }

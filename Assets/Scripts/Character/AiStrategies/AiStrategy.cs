@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AiStrategy : MonoBehaviour {
+public class AiStrategy {
 
     public string strategyName;
 }

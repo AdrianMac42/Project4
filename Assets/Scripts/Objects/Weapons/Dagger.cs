@@ -5,13 +5,28 @@ using UnityEngine;
 public class Dagger : Weapon
 {
 
+    public int woodReq = 1;
+    public int stoneReq = 1;
+    public int leatherReq = 1;
+
     void Awake()
     {
-        Range = 5;
-        MaxDamage = 4;
-        woodReq = 1;
-        stoneReq = 1;
-        leatherReq = 1;
+        range = 1;
+        maxDamage = 4;
+
+
+
+    }
+    public bool checkReq(GameObject x)
+    {
+        if (leatherReq <= x.GetComponent<Stockpile>().leather && stoneReq <= x.GetComponent<Stockpile>().stone && woodReq <= x.GetComponent<Stockpile>().wood)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     public void attack(CharacterStats attacker, CharacterStats defender)
@@ -19,11 +34,11 @@ public class Dagger : Weapon
         if (attacker.strength > attacker.dexterity)
         {
             int roll = Random.Range(1, 20);
-            ToHitModifier = attacker.strength;
-            int toAttack = roll + ToHitModifier;
+            toHitModifier = attacker.strength;
+            int toAttack = roll + toHitModifier;
             if (toAttack >= defender.armorClass)
             {
-                int rollDmg = Random.Range(1, MaxDamage) + attacker.strength + Quality;
+                int rollDmg = Random.Range(1, maxDamage) + attacker.strength + quality;
                 hit(defender, rollDmg);
             }
             else
@@ -34,11 +49,11 @@ public class Dagger : Weapon
         else
         {
             int roll = Random.Range(1, 20);
-            ToHitModifier = attacker.dexterity;
-            int toAttack = roll + ToHitModifier;
+            toHitModifier = attacker.dexterity;
+            int toAttack = roll + toHitModifier;
             if (toAttack >= defender.armorClass)
             {
-                int rollDmg = Random.Range(1, MaxDamage) + attacker.dexterity;
+                int rollDmg = Random.Range(1, maxDamage) + attacker.dexterity + quality;
                 hit(defender, rollDmg);
             }
             else

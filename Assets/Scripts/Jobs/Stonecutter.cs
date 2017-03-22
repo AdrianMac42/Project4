@@ -29,8 +29,49 @@ public class Stonecutter : Job
                     numberOfWorkers1++;
                 else
                     numberOfWorkers2++;
-                work(element.GetComponent<CharacterStats>());
+
+                if (GameObject.Find("GameController").GetComponent<PhaseManager>().phaseNo <= 1)
+                {
+                    work(element.GetComponent<CharacterStats>());
+                }
+                else
+                {
+                    finishWork(element.GetComponent<CharacterStats>());
+                }
             }
+        }
+    }
+
+    void finishWork(CharacterStats ch)
+    {
+        if (ch.currentCarryLoad > 0)
+        {
+            if (ch.teamNo == 1)
+            {
+                ch.targetStockpile = GameObject.Find("Team1Spawn");
+            }
+            else if (ch.teamNo == 2)
+            {
+                ch.targetStockpile = GameObject.Find("Team2Spawn");
+            }
+            else
+            {
+                Debug.LogError("STOCKPILE NOT ASSIGNED");
+            }
+            // if not withing range...move to it
+            if (Vector3.Distance(ch.transform.position, ch.targetStockpile.transform.position) >= 0.5f)
+            {
+                ch.transform.position = Vector3.MoveTowards(ch.transform.position, ch.targetStockpile.transform.position, (ch.speed * Time.smoothDeltaTime));
+            }
+            else // if in range...deposit
+            {
+                ch.targetStockpile.GetComponent<Stockpile>().stone += ch.currentCarryLoad;
+                ch.currentCarryLoad -= ch.currentCarryLoad;
+            }
+        }
+        else
+        {
+            ch.armUp();
         }
     }
 
@@ -85,8 +126,7 @@ public class Stonecutter : Job
         }
         else if (ch.currentCarryLoad > 0)
         {
-
-            Vector3 targetLoc = (ch.targetStockpile.transform.position - ch.transform.position);
+            
             // if not withing range...move to it
             if (Vector3.Distance(ch.transform.position, ch.targetStockpile.transform.position) >= 0.5f)
             {
@@ -99,7 +139,28 @@ public class Stonecutter : Job
             }
 
         }
+        else
+        {
+            strole(ch);
+        }
     }
+
+
+    void strole(CharacterStats c)
+    {
+        if (c.strolePos == null)
+        {
+            c.strolePos = c.transform.position;
+        }
+        int ran = UnityEngine.Random.Range(1, 60);
+        if (ran == 1)
+        {
+            c.strolePos += new Vector3(UnityEngine.Random.Range(-2, 3), UnityEngine.Random.Range(-2, 3), 0);
+        }
+
+        c.transform.position = Vector3.MoveTowards(c.transform.position, c.strolePos, (c.speed * Time.smoothDeltaTime));
+    }
+
 
 
 

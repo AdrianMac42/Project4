@@ -63,17 +63,9 @@ public class Team : MonoBehaviour {
             GameObject chara = Instantiate(character, sp, spawnN.transform.rotation,this.gameObject.transform);
             chara.AddComponent<CharacterStats>();
             CharacterStats ch = chara.GetComponent<CharacterStats>();
-            ch.newCharacterStats(this);
             ch.teamNo = t;
+            ch.newCharacterStats(this, teamAi);
             chara.GetComponent<MeshRenderer>().material = mat;
-            if (!teamAi)
-            {
-                assignJobBased(GameObject.Find("JobManager"), ch);
-            }
-            else if(teamAi.strategyName == "JobBased")
-            {
-                assignJobBased(GameObject.Find("JobManager"), ch);
-            }
         }
     }
     int woodworkers = 0;
@@ -82,63 +74,7 @@ public class Team : MonoBehaviour {
     int crafters = 0;
     int idlers = 0;
 
-
-    void assignJobBased(GameObject jobCon, CharacterStats cha)
-    {
-        w = jobCon.GetComponent<Woodcutter>();
-        s = jobCon.GetComponent<Stonecutter>();
-        a = jobCon.GetComponent<AnimalTamer>();
-        c = jobCon.GetComponent<Crafter>();
-        i = jobCon.GetComponent<Idle>();
-
-        if (woodworkers == 0)
-        {
-            j = w;
-            woodworkers++;
-        }
-        else if (stonecutters == 0)
-        {
-            j = s;
-            stonecutters++;
-        }
-        else if ( animalTamers == 0)
-        {
-            j = a;
-            animalTamers++;
-        }
-        else if ( crafters == 0)
-        {
-            j = c;
-            crafters++;
-        }
-        else if (woodworkers == 1)
-        {
-            j = w;
-            woodworkers++;
-        }
-        else if (stonecutters == 1)
-        {
-            j = s;
-            stonecutters++;
-        }
-        else if (animalTamers == 1)
-        {
-            j = a;
-            animalTamers++;
-        }
-        else if (crafters == 1)
-        {
-            j = c;
-            crafters++;
-        }
-        else
-        {
-            j = i;
-            idlers++;
-        }
-
-        cha.currentJob = j;
-    }
+    
 
     void Update()
     {

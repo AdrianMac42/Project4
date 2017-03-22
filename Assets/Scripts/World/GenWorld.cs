@@ -3,23 +3,23 @@ using System.Collections;
 
 public class GenWorld : MonoBehaviour {
 	
-	int h;
-	int w;
-
-    GameObject tiles = new GameObject();
+	public int h = 100;
+	public int w = 100;
+    public int x;
+    public int y;
+    public GameObject tiles;
     System.Random rnd = new System.Random();
-
     
-
-	public GenWorld(int width, int height)
+    public void genWorld(int width, int height)
 	{
-        tiles.name = "Tiles";
+        x = width / 2;
+        y = height / 2;
 
-        for (int i = 0; i < height; i++) {
-			for (int j = 0; j < width; j++)
+        for (int i = (0 - y); i < y; i++) {
+			for (int j = (0 - x); j < x; j++)
             {
                 int ran = rnd.Next(1, 10);
-                Vector3 pos = new Vector3 (j, i, 100);
+                Vector3 pos = new Vector3 (j, i, tiles.transform.position.z);
                 GameObject tile;
                 if (ran == 1)
                 {
@@ -46,6 +46,9 @@ public class GenWorld : MonoBehaviour {
 		}
 	}
 
-
+    private void Start()
+    {
+        genWorld(w, h);
+    }
 
 }

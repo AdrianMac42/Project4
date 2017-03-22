@@ -5,12 +5,23 @@ using UnityEngine;
 public class LArmor : Armor {
 
 
-    void Awake ()
+    public int woodReq = 0;
+    public int stoneReq = 0;
+    public int leatherReq = 10;
+    void update ()
     {
-        woodReq = 0;
-        stoneReq = 0;
-        leatherReq = 10;
-        Ac = 8 + Wielder.dexterity;
+        ac = 8 + wielder.dexterity + quality;
     }
 
+    public bool checkReq(GameObject x)
+    {
+        if (leatherReq <= x.GetComponent<Stockpile>().leather && stoneReq <= x.GetComponent<Stockpile>().stone && woodReq <= x.GetComponent<Stockpile>().wood)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 }

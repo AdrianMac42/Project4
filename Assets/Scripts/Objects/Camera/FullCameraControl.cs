@@ -6,19 +6,21 @@ public class FullCameraControl : MonoBehaviour {
     float xAxisValue;
     float yAxisValue;
     Camera thisCamera;
-    WorldController world;
+    GenWorld world;
 
     // Use this for initialization
-    void Start () {
+    void Start()
+    {
         thisCamera = gameObject.GetComponent<Camera>();
-        world = GameObject.Find("GameController").GetComponent<WorldController>();
+        world = GameObject.Find("GameController").GetComponent<GenWorld>();
 
     }
-	
-	// Update is called once per frame
-	void Update () {
-        
-        //gameObject.transform.position = new Vector3(Mathf.Clamp(transform.position.x, 3, world.worldWidth-3), Mathf.Clamp(transform.position.y, 3, world.worldHeight-3), transform.position.z);
+
+    // Update is called once per frame
+    void Update()
+    {
+
+        gameObject.transform.position = new Vector3(Mathf.Clamp(transform.position.x, -world.x + 3, world.x - 3), Mathf.Clamp(transform.position.y, -world.y + 3, world.y - 3), transform.position.z);
 
         xAxisValue = Input.GetAxisRaw("Horizontal");
         yAxisValue = Input.GetAxisRaw("Vertical");
@@ -55,7 +57,7 @@ public class FullCameraControl : MonoBehaviour {
             }
         }
 
-        //gameObject.transform.position = new Vector3(Mathf.Clamp(transform.position.x, 3, world.worldWidth - 3), Mathf.Clamp(transform.position.y, 3, world.worldHeight - 3), transform.position.z);
+        gameObject.transform.position = new Vector3(Mathf.Clamp(transform.position.x, -world.x + 3, world.x - 3), Mathf.Clamp(transform.position.y, -world.y + 3, world.y - 3), transform.position.z);
 
 
 

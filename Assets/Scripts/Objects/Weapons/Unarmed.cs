@@ -7,19 +7,19 @@ public class Unarmed : Weapon
 
     void Awake()
     {
-        Range = 5;
-        MaxDamage = 2;
+        range = 1;
+        maxDamage = 2;
     }
 
     public void attack(CharacterStats attacker, CharacterStats defender)
     {
         
         int roll = Random.Range(1, 20);
-        ToHitModifier = attacker.strength;
-        int toAttack = roll + ToHitModifier;
+        toHitModifier = attacker.strength;
+        int toAttack = roll + toHitModifier;
         if (toAttack >= defender.armorClass)
         {
-            int rollDmg = Random.Range(1, MaxDamage) + attacker.strength;
+            int rollDmg = Random.Range(1, maxDamage) + attacker.strength;
             hit(defender, rollDmg);
         }
         else
